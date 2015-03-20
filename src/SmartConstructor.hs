@@ -7,7 +7,7 @@ Stability:      experimental
 
 This module exposes a 'makeSmartCtor' function which automatically creates
 smart constructors for custom newtype'd Haskell types. See
-<http://www.haskell.org/haskellwiki/SmartConstructors> for a more in-depth
+<http://wiki.haskell.org/Smart_constructors> for a more in-depth
 discussion of smart constructors in Haskell.
 
 Smart constructors are useful for imposing additional checks on values;
