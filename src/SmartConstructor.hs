@@ -98,25 +98,25 @@ makeSmartCtor :: SmartCtorOptions -- Options to customize the smart constructor 
               -> Name             -- The type to generate a smart constructor function for.
               -> Q Exp            -- A predicate which is applied to the smart constructor argument to decide whether a Just value or Nothing is returned.
               -> Q [Dec]
-makeSmartCtor opts typeName pred = do
-    predExp <- pred
+makeSmartCtor opts typeName predicate = do
+    predExp <- predicate
     (dataCtor, tyVarBndrs) <- reify typeName >>= \case
         TyConI (NewtypeD _ _ tyVarBndrs ctor _) -> return (ctor, tyVarBndrs)
         _                                       -> fail "smartCtor: Expected name of newtype'd type constructor"
-    sequence [ctorSignature tyVarBndrs typeName dataCtor, ctorDefinition predExp dataCtor]
+    sequence [ctorSignature tyVarBndrs dataCtor, ctorDefinition predExp dataCtor]
   where
-    ctorSignature :: [TyVarBndr] -> Name -> Con -> Q Dec
-    ctorSignature tyVarBndrs typeName (NormalC _ [(_, innerType)]) = do
+    ctorSignature :: [TyVarBndr] -> Con -> Q Dec
+    ctorSignature tyVarBndrs (NormalC _ [(_, innerType)]) = do
         let tyVarNames = map tyVarName tyVarBndrs
         let resultType = AppT (ConT maybeName) (typeConType typeName tyVarNames)
         return (SigD conName (ForallT tyVarBndrs [] (makeFuncT innerType resultType)))
-    ctorSignature _ _ _ = fail "smartCtor: Expected name of newtype'd type constructor"
+    ctorSignature _ _ = fail "smartCtor: Expected name of newtype'd type constructor"
 
     ctorDefinition :: Exp -> Con -> Q Dec
-    ctorDefinition pred (NormalC wrapperTypeName _) =
+    ctorDefinition predExp (NormalC wrapperTypeName _) =
           return (FunD conName [Clause [VarP argName] ctorBody []])
       where
-        ctorBody = GuardedB [ (NormalG (AppE pred (VarE argName)), AppE (ConE justName) (AppE (ConE wrapperTypeName) (VarE argName)))
+        ctorBody = GuardedB [ (NormalG (AppE predExp (VarE argName)), AppE (ConE justName) (AppE (ConE wrapperTypeName) (VarE argName)))
                             , (NormalG (ConE trueName), ConE nothingName)
                             ]
         argName = mkName "x"
