@@ -19,7 +19,7 @@ given e.g.
     newtype NonEmptyList a = NonEmptyList [a]
     newtype Interval = Interval (Integer, Integer)
 
-You can use 'makeSmartCtor' to generate smart constructors as follows:
+You can use `makeSmartCtor` to generate smart constructors as follows:
 
     -- Defines 'makePositive :: Int -> Maybe Positive'
     makeSmartCtor defaultOptions ''Positive [|(> 0)|]
@@ -29,12 +29,12 @@ You can use 'makeSmartCtor' to generate smart constructors as follows:
 
 Notice how the third argument defines a predicate; the generated functions
 apply this predicate to the given value: if it yields true, the smart
-constructor call evaluates to a 'Just' value. If the predicate yields false,
-the smart constructor evaluates to 'Nothing'.
+constructor call evaluates to a `Just` value. If the predicate yields false,
+the smart constructor evaluates to `Nothing`.
 
 By default, the name for the smart constructor is derived from the
-type name. A custom name can be specified by modifying the 'ctorName'
-field of the defaultOptions:
+type name. A custom name can be specified by modifying the `ctorName`
+field of the `defaultOptions`:
 
     -- Defines 'createIV :: (Integer, Integer) -> Maybe Interval
     makeSmartCtor defaultOptions{ ctorName = "createIV" } ''Interval [|uncurry (<=)|]
