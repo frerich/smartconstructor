@@ -109,20 +109,20 @@ makeSmartCtor opts typeName predicate = do
     ctorSignature tyVarBndrs (NormalC _ [(_, innerType)]) = do
         let tyVarNames = map tyVarName tyVarBndrs
         let resultType = AppT (ConT maybeName) (typeConType typeName tyVarNames)
-        return (SigD conName (ForallT tyVarBndrs [] (makeFuncT innerType resultType)))
+        return (SigD ctorName_ (ForallT tyVarBndrs [] (makeFuncT innerType resultType)))
     ctorSignature _ _ = fail "smartCtor: Expected name of newtype'd type constructor"
 
     ctorDefinition :: Exp -> Con -> Q Dec
     ctorDefinition predExp (NormalC wrapperTypeName _) =
-          return (FunD conName [Clause [VarP argName] ctorBody []])
+          return (FunD ctorName_ [Clause [VarP argName] ctorBody []])
       where
         ctorBody = GuardedB [ (NormalG (AppE predExp (VarE argName)), AppE (ConE justName) (AppE (ConE wrapperTypeName) (VarE argName)))
                             , (NormalG (ConE trueName), ConE nothingName)
                             ]
         argName = mkName "x"
 
-    conName :: Name
-    conName = mkName $
+    ctorName_ :: Name
+    ctorName_ = mkName $
         if null (ctorName opts)
             then "make" ++ nameBase typeName
             else ctorName opts
