@@ -93,6 +93,12 @@ tyVarName :: TyVarBndr -> Name
 tyVarName (PlainTV n)    = n
 tyVarName (KindedTV n _) = n
 
+conName :: Con -> Name
+conName (NormalC n _)   = n
+conName (RecC n _)      = n
+conName (InfixC _ n _)  = n
+conName (ForallC _ _ c) = conName c
+
 -- |The 'makeSmartCtor' function creates a smart constructor for the given type, using the given predicate.
 makeSmartCtor :: SmartCtorOptions -- Options to customize the smart constructor function; the name of the defined function can be changed.
               -> Name             -- The type to generate a smart constructor function for.
@@ -106,17 +112,20 @@ makeSmartCtor opts typeName predicate = do
     sequence [ctorSignature tyVarBndrs dataCtor, ctorDefinition predExp dataCtor]
   where
     ctorSignature :: [TyVarBndr] -> Con -> Q Dec
-    ctorSignature tyVarBndrs (NormalC _ [(_, innerType)]) = do
+    ctorSignature tyVarBndrs con = do
         let tyVarNames = map tyVarName tyVarBndrs
         let resultType = AppT (ConT maybeName) (typeConType typeName tyVarNames)
-        return (SigD ctorName_ (ForallT tyVarBndrs [] (makeFuncT innerType resultType)))
-    ctorSignature _ _ = fail "smartCtor: Expected name of newtype'd type constructor"
+        return (SigD ctorName_ (ForallT tyVarBndrs [] (makeFuncT (innerType con) resultType)))
+      where
+        innerType (NormalC _ [(_, t)]) = t
+        innerType (RecC _ [(_, _, t)]) = t
+        innerType _                    = undefined
 
     ctorDefinition :: Exp -> Con -> Q Dec
-    ctorDefinition predExp (NormalC wrapperTypeName _) =
+    ctorDefinition predExp con =
           return (FunD ctorName_ [Clause [VarP argName] ctorBody []])
       where
-        ctorBody = GuardedB [ (NormalG (AppE predExp (VarE argName)), AppE (ConE justName) (AppE (ConE wrapperTypeName) (VarE argName)))
+        ctorBody = GuardedB [ (NormalG (AppE predExp (VarE argName)), AppE (ConE justName) (AppE (ConE (conName con)) (VarE argName)))
                             , (NormalG (ConE trueName), ConE nothingName)
                             ]
         argName = mkName "x"
