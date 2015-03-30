@@ -1,5 +1,5 @@
 name:                smartconstructor
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            A package exposing a helper function for generating smart constructors.
 description:         A package exposing a helper function for generating smart constructors.
 homepage:            http://github.com/frerich/smartconstructor
